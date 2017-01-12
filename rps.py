@@ -198,5 +198,32 @@ def main():
     print_key_guide()
 
 
-if __name__ == "__main__":
-    main()
+if __name__=='__main__':
+    try:
+        # Initialize curses
+        screen = curses.initscr()
+        # Turn off echoing of keys, and enter cbreak mode,
+        # where no buffering is performed on keyboard input
+        curses.noecho()
+        curses.cbreak()
+
+        # In keypad mode, escape sequences for special keys
+        # (like the cursor keys) will be interpreted and
+        # a special value like curses.KEY_LEFT will be returned
+        screen.keypad(1)
+
+        # Enter the main loop
+        main()                    
+        # Set everything back to normal
+        screen.keypad(0)
+        curses.echo()
+        curses.nocbreak()
+        # Terminate curses
+        curses.endwin()                 
+    except:
+        # In event of error, restore terminal to sane state.
+        screen.keypad(0)
+        curses.echo()
+        curses.nocbreak()
+        curses.endwin()
+        traceback.print_exc()           # Print the exception
