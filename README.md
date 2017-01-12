@@ -36,8 +36,6 @@ Dependencies
 
 In order to make it as portable as possible, we use only modules that are included with most python distributions:
 
-- os, for 
-- sys
 - curses (the python wrapper for ncurses)
 - time, for timing responses and the countdown
 
