@@ -5,6 +5,7 @@ __copyright__   = "2016, MIT"
 
 import os
 import sys
+from time import time
 
 # get data from external file
 from rps_data import *
