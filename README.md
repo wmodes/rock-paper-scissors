@@ -16,7 +16,7 @@ Up front the game gives the user some choices to spice things up a bit:
 Considerations
 --------------
 
-- When you have a game that relies on guessing against a computer, how to you make sure that the computer is not cheating?
+**When you have a game that relies on guessing against a computer, how to you make sure that the computer is not cheating?**
 
 You can examine the source code, of course, and see that the computer is not looing at the user's response before making a choice.
 
