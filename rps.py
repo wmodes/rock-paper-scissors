@@ -1,3 +1,5 @@
+#!/usr/bin/python
+# -*- coding: iso-8859-15 -*-
 """rock_paper_scissors.py: The classic game with some extra features."""
 __author__      = "Wes Modes (wmodes@gmail.com)"
 __copyright__   = "2016, MIT"
@@ -9,15 +11,20 @@ from time import time
 
 # get data from external file
 from rps_data import *
-from termcolor import colored, cprint
-
-
+#from termcolor import colored, cprint
 
 #
 # Constants
 #   (Convention: These are capitalized)
 #
 GRACE_TIME = 1000   # time in ms before we suspect the user is cheating
+
+# TODO: Use python module curses that allows easy painting text on the terminal
+# ANSI Escape Codes - these work for MOST terminals, but not all
+ANSI_CLEAR = '\033[2J'
+ANSI_ERASE_EOL = '\033[K'
+ANSI_DOWN1 = '\033[1B'
+ANSI_UP1 = '\033[1A'
 
 #
 # Global variables
@@ -28,9 +35,48 @@ players = 1
 elements = 3
 hands = 1
 
+def supports_ansi():
+    """
+    Returns True if the running system's terminal supports color, and False
+    otherwise.
+    """
+    plat = sys.platform
+    supported_platform = plat != 'Pocket PC' and (plat != 'win32' or
+                                                  'ANSICON' in os.environ)
+    # isatty is not always implemented, #6223.
+    is_a_tty = hasattr(sys.stdout, 'isatty') and sys.stdout.isatty()
+    if not supported_platform or not is_a_tty:
+        return False
+    return True
+
 # print the rules
 def print_rules():
     pass
+
+# print brief instructions
+def print_brief():
+    if (players == 1):
+        player_text = "you and the computer"
+    else:
+        player_text = "both players"
+    print 'Traditionally, in each round, players usually count aloud to 3, or say the name of the'
+    print 'game ("rock paper scissors," "Ro Sham Bo," "Jan Ken Po", and so on) raising one'
+    print 'hand in a fist and swinging it down on the count. They then \"throw\" by extending their'
+    print 'chosen "hand," either rock, paper, or scissors, towards their opponent. These shapes are '
+    print '"rock" (a simple fist), "paper" (a flat hand), and "scissors" (a fist with the '
+    print 'index and middle fingers together forming a V).'
+    print ''
+    print 'In this game, you will get a 1-2-3 count, whereupon', player_text, 'will'
+    print 'simultaneously choose a "hand" (in this case, a chosen key).'
+    print ''
+    print 'Here are the rules around which hand wins:'
+    if (elements == 3):
+        print 'Scissors cuts paper. Paper covers rock. Rock crushes scissors.'
+    else:
+        print 'Scissors cuts paper and decapitates lizard. Paper covers rock and disproves Spock.'
+        print 'Rock crushes scissors and lizard. Lizard eats paper and poisons Spock. Spock'
+        print 'smashes scissors and vaporizes rock.'
+    print ''
 
 # center text in fixed string width (without cutting front off)
 def center_tab(string, width):
@@ -45,65 +91,29 @@ def center_tab(string, width):
 
 # print the key guide
 def print_key_guide():
-    # get the width of the console
-    # thanks, stackoverflow: http://stackoverflow.com/questions/566746/
-    rows, columns = os.popen('stty size', 'r').read().split()
-    keys = 10
-    width = int(columns)/keys   # width of each key
-    # we'll construct a list of which keys represent which choices
-    #   (zero = blank, and 1 = first element in list)
-    num_list = [1,2,3]
-    if (elements == 5):
-        num_list.extend([4,5])
-    else:
-        num_list.extend([0,0])
-    if (players == 2):
-        num_list.extend([1,2,3])
-        if (elements == 5):
-            num_list.extend([4,5])
-        else:
-            num_list.extend([0,0])
-    else:
-        num_list.extend([0,0,0,0,0])
-    # now we should have a list of 10 numbers that represents which keys
-    #   correspond to which choice
-    # We can now create a list of words for each key, looking each one
-    #   in our elements list
-    word_list = []
-    for num in num_list:
-        if (not num):
-            word_list.append("")
-        else:
-            word_list.append(element_list[num-1])
-    # Line 1 of key guide - Players
-    if (players == 1):
-        if (elements == 3):
-            text = colored(center_tab("Player", width*3 - 1) + "|", attrs=['reverse'])
-        else:
-            text = colored(center_tab("Player", width*5 - 1) + "|", attrs=['reverse'])
-    else:
-        if (elements == 3):
-            text = colored(center_tab("Player 1", width*3 - 1) + "|", attrs=['reverse'])
-            text += ((width*2 - 1) * " ") + "|"
-            text += colored(center_tab("Player 2", width*3 - 1) + "|", attrs=['reverse'])
-        else:
-            text = colored(center_tab("Player 1", width*5 - 1) + "|", attrs=['reverse'])
-            text += colored(center_tab("Player 2", width*5 - 1) + "|", attrs=['reverse'])            
-    print text
-    # Line 2 of key guide - Words
-    for word in word_list:
-        if (word):
-            sys.stdout.write(colored(center_tab(word, width-1)+"|", attrs=['reverse']))
-        else:
-            sys.stdout.write(center_tab("", width-1)+"|")
+    #print "players:", players, "elements", elements, "hands", hands
+    tab1 = 2
+    tab2 = 2
+    #print "-"*(37)
     print ""
-    # Line 3 of key guide - Numbers
-    for key in range(len(word_list)):
-        # we only want to print numbers for keys we are using
-        if (word_list[key]):
-            sys.stdout.write(colored(center_tab(key+1, width-1)+"|", attrs=['reverse']))
-        else:
-            sys.stdout.write(center_tab("", width-1)+"|")
+    if (players == 1):
+        print "Player Keys"
+        print "-----------"
+        print "1 =", element_list[0]
+        print "2 =", element_list[1]
+        print "3 =", element_list[2]
+        if (elements == 5):
+            print "4 =", element_list[3]
+            print "5 =", element_list[4]
+    else:
+        print "Player 1 Keys", "\t"*tab1, "Player 2 Keys"
+        print "-------------", "\t"*tab1, "-------------"
+        print "1 =", element_list[0], "\t"*tab2, "6 =", element_list[0]
+        print "2 =", element_list[1], "\t"*tab2, "7 =", element_list[1]
+        print "3 =", element_list[2], "\t"*tab2, "8 =", element_list[2]
+        if (elements == 5):
+            print "4 =", element_list[3], "\t"*tab2, "9 =", element_list[3]
+            print "5 =", element_list[4], "\t"*tab2, "0 =", element_list[4]
     print ""
     
 
@@ -111,7 +121,7 @@ def print_key_guide():
 # select instant-death or two-out-of-three
 # traditional RPS or RPSLS
 def user_config_game():
-    global players, elements, rounds
+    global players, elements, hands
     print ""
     # ask how many players - repeat until we get an answer
     while 1:
@@ -139,13 +149,13 @@ def user_config_game():
             print "  Spock smashes scissors and vaporizes rock; he is poisoned "
             print "  by lizard and disproven by paper. Lizard poisons Spock and "
             print "  eats paper; it is crushed by rock and decapitated by scissors."
+        elif ('l' in input or 'spock' in input):
+            print "  Rock-Paper-Scissors-Lizard-Spock. Okay!"
+            elements = 5
+            break
         elif ('rps' in input):
             print "  Traditional RPS"
             elements = 3
-            break
-        elif ('l' in input or '3' in input):
-            print "  Rock-Paper-Scissors-Lizard-Spock. Okay!"
-            elements = 5
             break
         else:
             print "  Not sure what you said there."
@@ -191,39 +201,13 @@ def determine_winner():
 #
 # note that most of the work is done by functions above
 def main():
-    #user_config_game()
-    global players, elements, rounds
-    players = 1
-    elements = 3
+    if supports_ansi():
+        print ANSI_CLEAR
+    user_config_game()
+    print_brief()
     print_key_guide()
 
-
+# 
 if __name__=='__main__':
-    try:
-        # Initialize curses
-        screen = curses.initscr()
-        # Turn off echoing of keys, and enter cbreak mode,
-        # where no buffering is performed on keyboard input
-        curses.noecho()
-        curses.cbreak()
-
-        # In keypad mode, escape sequences for special keys
-        # (like the cursor keys) will be interpreted and
-        # a special value like curses.KEY_LEFT will be returned
-        screen.keypad(1)
-
         # Enter the main loop
-        main()                    
-        # Set everything back to normal
-        screen.keypad(0)
-        curses.echo()
-        curses.nocbreak()
-        # Terminate curses
-        curses.endwin()                 
-    except:
-        # In event of error, restore terminal to sane state.
-        screen.keypad(0)
-        curses.echo()
-        curses.nocbreak()
-        curses.endwin()
-        traceback.print_exc()           # Print the exception
+        main() 
