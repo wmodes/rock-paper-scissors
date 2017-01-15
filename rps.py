@@ -100,7 +100,9 @@ def supports_ansi():
     # isatty is not always implemented, #6223.
     is_a_tty = hasattr(sys.stdout, 'isatty') and sys.stdout.isatty()
     if not supported_platform or not is_a_tty:
+        print "Nope, doesn't support ANSI"
         return False
+    print "Yup, supports ANSI"
     return True
 
 def clear():
@@ -316,7 +318,7 @@ def determine_winner():
 
 # note that most of the work is done by functions above
 def main():
-
+    clear()
     user_config_game()
     print_brief()
     ready("Hit any key.")
