@@ -13,37 +13,48 @@ element_list = ["rock", "paper", "scissors", "lizard", "spock"]
 ELEMENTS = {
     "rock": {
         "defeats": {
-            "scissors": {"how": "crushes"},
-            "lizard": {"how": "crushes"}
+            "scissors": "crushes",
+            "lizard": "crushes"
         },
+        "ties": "bangs futilely against",
         "synonyms": ["a rock", "a stone", "a pebble", "a boulder"]
     },
     "paper": {
         "defeats": {
-            "rock": {"how": "covers"},
-            "spock": {"how": "disproves"}
+            "rock": "covers",
+            "spock": "disproves"
         },
+        "ties": "flutters against",
         "synonyms": ["paper", "parchment"]
     },
     "scissors": {
         "defeats": {
-            "paper": {"how": "cuts"},
-            "lizard": {"how": "decapitates"}
+            "paper": "cuts",
+            "lizard": "decapitates"
         },
+        "ties": "snip at",
         "synonyms": ["the scissors", "the sheers", "the clippers"]
     },
     "lizard": {
         "defeats": {
-            "paper": {"how": "eats"},
-            "spock": {"how": "poisons"}
+            "paper": "eats",
+            "spock": "poisons"
         },
+        "ties": "bites at",
         "synonyms": ["the lizard", "the tiny dragon"]
     },
     "spock": {
         "defeats": {
-            "scissors": {"how": "smashes"},
-            "rock": {"how": "vaporizes"}
+            "scissors": "smashes",
+            "rock": "vaporizes"
         },
+        "ties": "examines",
         "synonyms": ["Spock", "the Vulcan"]
     },
+}
+
+# Now we create a dictionary of keys
+KEYS = {
+    0: ["1", "2", "3", "4", "5"],
+    1: ["6", "7", "8", "9", "0"],
 }
