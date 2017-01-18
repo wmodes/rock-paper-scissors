@@ -511,9 +511,7 @@ def report_winner(p1_element, p2_element):
     # declaring these variables as global allows us to change them from within the local scope
     global win_count
     print ""
-    # who does each player defeat? - get dictionary of defeats
-    p1_defeats_dict = ELEMENTS[p1_element]["defeats"]
-    p2_defeats_dict = ELEMENTS[p2_element]["defeats"]
+
     # first we check if one or both of the players didn't throw
     didnt_go = []
     if (not p1_element):
@@ -524,6 +522,9 @@ def report_winner(p1_element, p2_element):
         text1 = " and ".join(didnt_go) + " didn't throw!"
         text2 = "After the count, press the key to indicate your throw."
     else:
+        # who does each player defeat? - get dictionary of defeats
+        p1_defeats_dict = ELEMENTS[p1_element]["defeats"]
+        p2_defeats_dict = ELEMENTS[p2_element]["defeats"]
         # for color we choose a random synonym from list
         p1_text = choice(ELEMENTS[p1_element]["synonyms"])
         p2_text = choice(ELEMENTS[p2_element]["synonyms"])
@@ -649,7 +650,8 @@ def main():
         (p1_hand, p1_delay, p2_hand, p2_delay) = countdown_choices()
         report_winner(p1_hand, p2_hand)
         cheaters(p1_delay, p2_delay)
-        keep_record(p1_hand, p2_hand)
+        if (p1_hand and p2_hand):
+            keep_record(p1_hand, p2_hand)
         print_score()
         print ""
         if (min_wins not in win_count):
@@ -658,6 +660,7 @@ def main():
     #   win_count",min_wins not in win_count
     keynormalmode()
     print_record()
+    print ""
 
 # 
 if __name__=='__main__':
