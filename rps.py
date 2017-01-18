@@ -59,9 +59,7 @@ text_indent = 4
 player1 = "Player 1"
 player2 = "Player 2"
 # record keeping
-p1_throws_list = []
-p2_throws_list = []
-game_results_list = []
+game_record = []
 
 current_strategy = "wsls"
 
@@ -407,12 +405,12 @@ def get_system_choice():
     #   * If we are losing playing this strategy, shift to another strategy
     #       TODO: Implement this
     if (current_strategy == "wsls"):
-        if (not p1_throws_list):
+        if (not game_record):
             # if we have no data yet, choose scissors
             computer_throw = "scissors"
         else:
-            our_last = p2_throws_list[-1]
-            their_last = p1_throws_list[-1]
+            their_last = game_record[-1]["p1"]
+            our_last = game_record[-1]["p2"]
             # get results
             results = who_won(their_last, our_last)
             # did we tie? - if so, choose randomly
@@ -422,7 +420,7 @@ def get_system_choice():
             elif (results == 1):
                 computer_throw = defeats(their_last)
             # did we win? - if so, choose their last throw
-            elif (results == -1):
+            elif (results == 2):
                 computer_throw = their_last
     # STRATEGY 2: random
     else:
@@ -500,7 +498,7 @@ def who_won(p1_element, p2_element):
         return 1
     # p2 won
     elif (p1_element in p2_defeats_dict):
-        return -1
+        return 2
     else:
         return 100
  
@@ -535,7 +533,7 @@ def report_winner(p1_element, p2_element):
             text1 = p1_text + " " + p1_defeats_dict[p2_element] + " " + p2_text
             text2 = player1 + " wins!"
             win_count[0] += 1
-        elif (results == -1):
+        elif (results == 2):
             text1 = p2_text + " " + p2_defeats_dict[p1_element] + " " + p1_text
             text2 = player2 + " wins!"
             win_count[1] += 1
@@ -568,10 +566,17 @@ def cheaters(p1_delay, p2_delay):
 
 def keep_record(p1_element, p2_element):
     """We record each players' throw for possible analysis and strategy"""
-    global player1_throw, p1_throws_list
-    p1_throws_list.append(p1_element)
-    p2_throws_list.append(p2_element)
-    game_results_list.append(who_won(p1_element, p2_element))
+    global game_record
+    if (game_record):
+        last_game = game_record[-1]
+    this_game = {}
+    # Lists are lists of python objects, and these objects can be dictionaries
+    game_record.append({
+            "p1": p1_element,
+            "p2": p2_element,
+            "winner": who_won(p1_element, p2_element),
+            "strategy": "random"
+        })
 
 #
 # our main loop
