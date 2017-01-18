@@ -641,7 +641,7 @@ def main():
     while ((c != 'q') and (min_wins not in win_count)):
         print_key_guide()
         print ""
-        ready("Ready? (any key to start)")
+        ready("Press any key to start")
         print ""
         print center("Okay, here goes!")
         sleep(1)
