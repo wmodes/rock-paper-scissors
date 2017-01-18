@@ -58,6 +58,10 @@ text_indent = 4
 # What do we call the players
 player1 = "Player 1"
 player2 = "Player 2"
+# record keeping
+player1_throws = []
+player2_throws = []
+current_strategy = "wsls"
 
 #
 # text bidness
@@ -371,16 +375,21 @@ def legal_key(c):
                 # if we find it in KEYS, we return player and element
                 return (p, e)
 
+def defeats(element):
+    """Look up what defeats a given element"""
+    choices = []
+    for lookup in element_list[0:elements]:
+        if (element in ELEMENTS[lookup]["defeats"]):
+            choices.append(lookup)
+    return choice(choices)
+
 def get_system_choice():
     """Choose computer's throw. """
-    """TODO: We will exploit this research on rock paper scissors:
-            "if a player wins over her opponent in one play, her probability of repeating 
-            the same action in the next play is considerably higher than her probabilities 
-            of shifting actions." If a player has lost two or more times, she is likely to 
-            shift her play, and more likely to shift to the play that will beat the one that 
-            has just beaten her than the same one her opponent just used to beat her."
-            This is referred to as this as the "win-stay, lose-shift" strategy.
-        For us, this means we have to pay attention to what was played earlier."""
+    """We will exploit the win-stay, lose-shift strategy:
+            1. If our opponent wins, statistically they tend to stick with their winning move. 
+                So if we lose, we shift to a throw that will win against our opponent's previous throw.
+            2. If we won, we mirror what our opponent played.
+    """
     """TODO: We have to keep track of:
         - which strategy we are currently using
         - our win-lose record over the last few games
@@ -388,13 +397,33 @@ def get_system_choice():
         - possibly a record of the strategies it appears our opponent is using, to shift to
             a win against that strategy
         """
-    # we have a few strategies. 
-    # strategy 1: random
-    computer_throw = element_list[choice(range(elements))]
-    # strategy 2: win-stay, lose-shift
+    # STRATEGY 1: win-stay, lose-shift
+    #   * Assume A is opponent's throw, and A' defeats opponent's throw.
+    #   * If we win, next we play A
+    #   * If we lose, next we play A'
+    #   * If we are losing playing this strategy, shift to another strategy
     #       TODO: Implement this
-    # strategy 3: Benzy's contrarian gambit
-    #       TODO: Implement this
+    if (current_strategy == "wsls"):
+        if (not player1_throws):
+            # if we have no data yet, choose scissors
+            computer_throw = "scissors"
+        else:
+            our_last = player2_throws[-1]
+            their_last = player1_throws[-1]
+            # get results
+            results = who_won(their_last, our_last)
+            # did we tie? - if so, choose randomly
+            if (not results):
+                computer_throw = element_list[choice(range(elements))]
+            # did they win? - if so, choose a throw to defeat their last one
+            elif (results == 1):
+                computer_throw = defeats(their_last)
+            # did we win? - if so, choose their last throw
+            elif (results == -1):
+                computer_throw = their_last
+    # STRATEGY 2: random
+    else:
+        computer_throw = element_list[choice(range(elements))]
     return computer_throw
 
 # countdown and choices
@@ -456,12 +485,30 @@ def countdown_choices():
         p2_wait = 0
     return (p1_element, p1_wait, p2_element, p2_wait)
 
+def who_won(p1_element, p2_element):
+    # who does each player defeat? - get dictionary of defeats
+    p1_defeats_dict = ELEMENTS[p1_element]["defeats"]
+    p2_defeats_dict = ELEMENTS[p2_element]["defeats"]
+    # is it a tie?
+    if (p1_element == p2_element):
+        return 0
+    # did p1 win?
+    elif (p2_element in p1_defeats_dict):
+        return 1
+    # p2 won
+    elif (p1_element in p2_defeats_dict):
+        return -1
+    else:
+        return 100
  
-def determine_winner(p1_element, p2_element):
+def report_winner(p1_element, p2_element):
     """ determine winner of throw"""
     # declaring these variables as global allows us to change them from within the local scope
     global won
     print ""
+    # who does each player defeat? - get dictionary of defeats
+    p1_defeats_dict = ELEMENTS[p1_element]["defeats"]
+    p2_defeats_dict = ELEMENTS[p2_element]["defeats"]
     # first we check if one or both of the players didn't throw
     didnt_go = []
     if (not p1_element):
@@ -475,18 +522,17 @@ def determine_winner(p1_element, p2_element):
         # for color we choose a random synonym from list
         p1_text = choice(ELEMENTS[p1_element]["synonyms"])
         p2_text = choice(ELEMENTS[p2_element]["synonyms"])
-        # who does each player defeat? - get dictionary of defeats
-        p1_defeats_dict = ELEMENTS[p1_element]["defeats"]
-        p2_defeats_dict = ELEMENTS[p2_element]["defeats"]
+        # get results of contest
+        results = who_won(p1_element, p2_element)
         # first we check for a tie
-        if (p1_element == p2_element):
+        if (results == 0):
             text1 = p1_text + " " + ELEMENTS[p1_element]["ties"] + " " + p2_text
             text2 = "It's a tie!"
-        elif (p2_element in p1_defeats_dict):
+        elif (results == 1):
             text1 = p1_text + " " + p1_defeats_dict[p2_element] + " " + p2_text
             text2 = player1 + " wins!"
             won[0] += 1
-        elif (p1_element in p2_defeats_dict):
+        elif (results == -1):
             text1 = p2_text + " " + p2_defeats_dict[p1_element] + " " + p1_text
             text2 = player2 + " wins!"
             won[1] += 1
@@ -517,6 +563,12 @@ def cheaters(p1_delay, p2_delay):
         print center("""If you throw too long after "GO!" some might say you are cheating.""")
         print center("""Ahem, %s""" % late_bees)
 
+def keep_record(p1_element, p2_element):
+    """We record each players' throw for possible analysis and strategy"""
+    global player1_throw, player1_throws
+    player1_throws.append(p1_element)
+    player2_throws.append(p2_element)
+
 #
 # our main loop
 #
@@ -540,8 +592,9 @@ def main():
         sleep(1)
         game += 1
         (p1_hand, p1_delay, p2_hand, p2_delay) = countdown_choices()
-        determine_winner(p1_hand, p2_hand)
+        report_winner(p1_hand, p2_hand)
         cheaters(p1_delay, p2_delay)
+        keep_record(p1_hand, p2_hand)
         print_score()
         print ""
         if (wins not in won):
