@@ -215,7 +215,7 @@ def user_config_game():
             print indent("Rock-Paper-Scissors-Lizard-Spock. Okay!")
             elements = 5
             break
-        elif any(s in input for s in ['rps', 'tra', 'old']):
+        elif any(s in input for s in ['rps', 'tra', 'old', 'rock']):
             print indent("Traditional Rock-Paper-Scissors")
             elements = 3
             break
