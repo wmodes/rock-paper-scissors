@@ -61,7 +61,7 @@ player2 = "Player 2"
 # record keeping
 game_record = []
 
-current_strategy = "wsls"
+computer_strategy = "wsls"
 
 #
 # text bidness
@@ -376,11 +376,15 @@ def legal_key(c):
                 # if we find it in KEYS, we return player and element
                 return (p, e)
 
-def defeats(element):
+def defeats(element1, element2):
+    """ Does element1 defeat element2?"""
+    return element2 in ELEMENTS[element1]["defeats"]
+
+def what_defeats(element):
     """Look up what defeats a given element"""
     choices = []
     for lookup in element_list[0:elements]:
-        if (element in ELEMENTS[lookup]["defeats"]):
+        if defeats(lookup, element):
             choices.append(lookup)
     return choice(choices)
 
@@ -404,7 +408,7 @@ def get_system_choice():
     #   * If we lose, next we play A'
     #   * If we are losing playing this strategy, shift to another strategy
     #       TODO: Implement this
-    if (current_strategy == "wsls"):
+    if (computer_strategy == "wsls"):
         if (not game_record):
             # if we have no data yet, choose scissors
             computer_throw = "scissors"
@@ -418,7 +422,7 @@ def get_system_choice():
                 computer_throw = element_list[choice(range(elements))]
             # did they win? - if so, choose a throw to defeat their last one
             elif (results == 1):
-                computer_throw = defeats(their_last)
+                computer_throw = what_defeats(their_last)
             # did we win? - if so, choose their last throw
             elif (results == 2):
                 computer_throw = their_last
@@ -564,19 +568,61 @@ def cheaters(p1_delay, p2_delay):
         print center("""If you throw too long after "GO!" some might say you are cheating.""")
         print center("""Ahem, %s""" % late_bees)
 
+def what_strategy(old1, old2, winner, new1, new2):
+    """Try to guess the apparent strategy player is using, based on the previous moves, the current moves, 
+    and who won the last game."""
+    # if the previous game was a tie, we can't infer anything about it
+    if (winner == 0):
+        return("unknown")
+    # Strategy 1: Win Stay, Loss Shift
+    # if they won, and stayed, or
+    elif (((winner == 1) and (new1 == old1)) or
+            # if they lost, and shifted to what would have won
+            ((winner == 2) and defeats(new1, old2))):
+        return("wsls")
+    # Strategy 2: Contrarian strategy - a defence/offense against WSLS
+    # if they won, and then shifted to what would have lost to that throw
+    elif (((winner == 1) and defeats(new1, old1)) or
+            # if they lost, and then chose their opponent's old hand
+            ((winner == 2) and (new1 == old2))):
+        return("contrarian")
+    else:
+        return("unknown")
+
 def keep_record(p1_element, p2_element):
     """We record each players' throw for possible analysis and strategy"""
     global game_record
-    if (game_record):
+    if (not game_record):
+        p1_strategy = "unknown"
+        p2_strategy = "unknown"
+    else:
         last_game = game_record[-1]
-    this_game = {}
+        p1_strategy = what_strategy(last_game["p1"], last_game["p2"], last_game["winner"], 
+            p1_element, p2_element)
+        p2_strategy = what_strategy(last_game["p2"], last_game["p1"], last_game["winner"], 
+            p2_element, p1_element)
     # Lists are lists of python objects, and these objects can be dictionaries
     game_record.append({
             "p1": p1_element,
             "p2": p2_element,
             "winner": who_won(p1_element, p2_element),
-            "strategy": "random"
+            "strategy1": p1_strategy,
+            "strategy2": p2_strategy
         })
+
+def print_record():
+    """Print the game record"""
+    print ""
+    tab = "    "
+    print nicely(player1 + " vs. " + player2)
+    print nicely("----------------------")
+    print nicely("%8s%s%8s%s%8s%s%8s%s%10s%s%10s" % 
+            ("Throw", tab, "P1", tab, "P2", tab, "Winner", tab, "Strategy 1", tab, "Strategy 2"))
+    for n in range(len(game_record)):
+        throw = game_record[n]
+        print nicely("%8s%s%8s%s%8s%s%8s%s%10s%s%10s" % 
+            (str(n), tab, throw["p1"], tab, throw["p2"], tab, str(throw["winner"]), 
+                tab, throw["strategy1"], tab, throw["strategy2"]))
 
 #
 # our main loop
@@ -611,17 +657,18 @@ def main():
     #print "c",c,"min_wins",min_wins,"win_count",win_count,"min_wins not in
     #   win_count",min_wins not in win_count
     keynormalmode()
+    print_record()
 
 # 
 if __name__=='__main__':
-    try:     
+    # try:     
         # Enter the main loop
-        main()
-    except Exception as e: 
-        print ""
-        print str(e)
-        keynormalmode()
-    except:
-        print ""
-        print "Exiting."
-        keynormalmode()
+    main()
+    # except Exception as e: 
+    #     print ""
+    #     print str(e)
+    #     keynormalmode()
+    # except:
+    #     print ""
+    #     print "Exiting."
+    #     keynormalmode()
