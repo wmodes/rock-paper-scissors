@@ -49,8 +49,8 @@ players = 1
 # the number of elements in the game
 elements = 3
 # the max number of hands we play to determine a winner
-wins = 1
-won = [0, 0]
+min_wins = 1
+win_count = [0, 0]
 game = 0
 # how wide we want to display our text
 text_width = 80
@@ -59,8 +59,10 @@ text_indent = 4
 player1 = "Player 1"
 player2 = "Player 2"
 # record keeping
-player1_throws = []
-player2_throws = []
+p1_throws_list = []
+p2_throws_list = []
+game_results_list = []
+
 current_strategy = "wsls"
 
 #
@@ -171,7 +173,7 @@ def user_config_game():
     Select instant-death or two-out-of-three? Traditional RPS or RPSLS? """
 
     # declaring these variables as global allows us to change them from within the local scope
-    global players, elements, hands, player1, player2, wins
+    global players, elements, hands, player1, player2, min_wins
     print ""
     # ask how many players - repeat until we get an answer
     while 1:
@@ -233,17 +235,17 @@ def user_config_game():
         # we'll just look for a few unique key letters in the input
         elif any(s in input for s in ['1', 'ins', 'dea']):
             print indent("Instant-death!")
-            wins = 1
+            min_wins = 1
             break
         # we'll just look for a few unique key letters in the input
         elif any(s in input for s in ['ind', 'def', 'for', 'infi']):
             print indent("Indefinite!")
-            wins = 1000
+            min_wins = 1000
             break
         # we'll just look for the numbers
         elif any(s in input for s in ['2', '3', 'out']):
             print indent("Two-out-of-three. Alright.")
-            wins = 2
+            min_wins = 2
             break
         else:
             print indent("Not sure what you said there.")
@@ -305,7 +307,8 @@ def print_score():
     tab_text = "\t" * 2
     print nicely("Throw %i - Current score:" % game)
     print nicely("------------------------")
-    print indent("%s:  %i%s%s:  %i" % (player1, won[0], tab_text, player2, won[1]))
+    print indent("%s:  %i%s%s:  %i" % (player1, win_count[0], tab_text,
+        player2, win_count[1]))
 
 def ready(text = "Any key to start."):
     print nicely(text),
@@ -404,12 +407,12 @@ def get_system_choice():
     #   * If we are losing playing this strategy, shift to another strategy
     #       TODO: Implement this
     if (current_strategy == "wsls"):
-        if (not player1_throws):
+        if (not p1_throws_list):
             # if we have no data yet, choose scissors
             computer_throw = "scissors"
         else:
-            our_last = player2_throws[-1]
-            their_last = player1_throws[-1]
+            our_last = p2_throws_list[-1]
+            their_last = p1_throws_list[-1]
             # get results
             results = who_won(their_last, our_last)
             # did we tie? - if so, choose randomly
@@ -504,7 +507,7 @@ def who_won(p1_element, p2_element):
 def report_winner(p1_element, p2_element):
     """ determine winner of throw"""
     # declaring these variables as global allows us to change them from within the local scope
-    global won
+    global win_count
     print ""
     # who does each player defeat? - get dictionary of defeats
     p1_defeats_dict = ELEMENTS[p1_element]["defeats"]
@@ -531,11 +534,11 @@ def report_winner(p1_element, p2_element):
         elif (results == 1):
             text1 = p1_text + " " + p1_defeats_dict[p2_element] + " " + p2_text
             text2 = player1 + " wins!"
-            won[0] += 1
+            win_count[0] += 1
         elif (results == -1):
             text1 = p2_text + " " + p2_defeats_dict[p1_element] + " " + p1_text
             text2 = player2 + " wins!"
-            won[1] += 1
+            win_count[1] += 1
         else:
             text1 = "Uh, something weird happened."
             text2 = "p1_element:"+p1_element+" p2_element:"+p2_element
@@ -565,9 +568,10 @@ def cheaters(p1_delay, p2_delay):
 
 def keep_record(p1_element, p2_element):
     """We record each players' throw for possible analysis and strategy"""
-    global player1_throw, player1_throws
-    player1_throws.append(p1_element)
-    player2_throws.append(p2_element)
+    global player1_throw, p1_throws_list
+    p1_throws_list.append(p1_element)
+    p2_throws_list.append(p2_element)
+    game_results_list.append(who_won(p1_element, p2_element))
 
 #
 # our main loop
@@ -583,7 +587,7 @@ def main():
     ready("Hit any key.")
     c = ""
     # let's repeat until either the player wants to quit or someone has won enough throws
-    while ((c != 'q') and (wins not in won)):
+    while ((c != 'q') and (min_wins not in win_count)):
         print_key_guide()
         print ""
         ready("Ready? (any key to start)")
@@ -597,9 +601,10 @@ def main():
         keep_record(p1_hand, p2_hand)
         print_score()
         print ""
-        if (wins not in won):
+        if (min_wins not in win_count):
             c = ready("New throw? (q to quit)")
-    #print "c",c,"wins",wins,"won",won,"wins not in won",wins not in won
+    #print "c",c,"min_wins",min_wins,"win_count",win_count,"min_wins not in
+    #   win_count",min_wins not in win_count
     keynormalmode()
 
 # 
