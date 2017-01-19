@@ -7,10 +7,11 @@ __copyright__   = "2016, MIT"
 
 import os
 import sys
-from time import time, sleep
+from time import time, sleep, strftime
 import textwrap
 import re
 from random import choice
+import csv
 
 # get data from external file
 from rps_data import *
@@ -38,6 +39,10 @@ ANSI_UP1 = ANSI_ESC+'[1A'
 ANSI_HOME = ANSI_ESC+'[0;0H'
 ANSI_BOTTOM = ANSI_ESC+'[999;0H'
 ANSI_ERASELINE = ANSI_ESC+'[2K'
+
+# File constants
+record_directory = "rps_logs"
+record_file_prefix = "rpslog-"
 
 #
 # Global variables
@@ -307,6 +312,8 @@ def print_score():
     print nicely("------------------------")
     print indent("%s:  %i%s%s:  %i" % (player1, win_count[0], tab_text,
         player2, win_count[1]))
+
+def print_summary
 
 def ready(text = "Any key to start."):
     print nicely(text),
@@ -625,6 +632,19 @@ def print_record():
             (str(n), tab, throw["p1"], tab, throw["p2"], tab, str(throw["winner"]), 
                 tab, throw["strategy1"], tab, throw["strategy2"]))
 
+def write_record_file():
+    """Write a file of the record of these games."""
+    if not os.path.exists(record_directory):
+        os.makedirs(record_directory)
+    filename = record_directory + "/" + record_file_prefix + strftime("%Y-%m-%d-%H:%M:%S")
+    with open(filename, 'wb') as csvfile:
+        rps_writer = csv.writer(csvfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
+        rps_writer.writerow(["Throw", "P1", "P2", "Winner", "Strategy 1", "Strategy 2"])
+        for n in range(len(game_record)):
+            throw = game_record[n]
+            rps_writer.writerow([str(n), throw["p1"], throw["p2"], str(throw["winner"]), 
+                    throw["strategy1"], throw["strategy2"]])
+
 #
 # our main loop
 #
@@ -659,7 +679,8 @@ def main():
     #print "c",c,"min_wins",min_wins,"win_count",win_count,"min_wins not in
     #   win_count",min_wins not in win_count
     keynormalmode()
-    print_record()
+    #print_record()
+    write_record_file()
     print ""
 
 # 
