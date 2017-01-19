@@ -66,7 +66,7 @@ player2 = "Player 2"
 # record keeping
 game_record = []
 
-computer_strategy = "wsls"
+computer_strategy = "wslsk"
 
 #
 # text bidness
@@ -333,8 +333,6 @@ def print_summary():
             percent = percent1
         # if player2 won
         else:
-            print center("In %i throws, %s won %i games or %i" % 
-                    (game, player2, win_count['p2'], percent2))
             winner = player2
             percent = percent2
         print ""
@@ -429,46 +427,72 @@ def what_defeats(element):
 
 def get_system_choice():
     """Choose computer's throw. """
-    """We will exploit the win-stay, lose-shift strategy:
-            1. If our opponent wins, statistically they tend to stick with their winning move. 
-                So if we lose, we shift to a throw that will win against our opponent's previous throw.
-            2. If we won, we mirror what our opponent played.
-    """
-    """TODO: We have to keep track of:
-        - which strategy we are currently using
-        - our win-lose record over the last few games
-        - the last two throws of us and our opponent
-        - possibly a record of the strategies it appears our opponent is using, to shift to
-            a win against that strategy
-        """
-    # STRATEGY 1: win-stay, lose-shift
-    #   * Assume A is opponent's throw, and A' defeats opponent's throw.
-    #   * If we win, next we play A
-    #   * If we lose, next we play A'
-    #   * If we are losing playing this strategy, shift to another strategy
-    #       TODO: Implement this
-    if (computer_strategy == "wsls"):
-        if (not game_record):
-            # if we have no data yet, choose scissors
-            computer_throw = "scissors"
-        else:
+    if (not game_record):
+        # if we have no data yet, choose with a bias for rock
+        computer_throw = choice(["rock", element_list[choice(range(elements))]])
+    else:
+        # STRATEGY: win-stay, lose-shift killer
+        #   * Assume A is opponent's last throw, and A' defeats it. B is our last throw, B' defeats it
+        #   * In general: 
+        #       * If player won (A -> B), they tend to play A again 
+        #       * If player lost (A <- B), they tend to play B' (what would defeat B)
+        #   * To defeat this:
+        #       * If we won (A <- B) player plays B', so we play A (which is B'') 
+        #       * If we lost (A -> B) player tends to repeat, so we play A'
+        #   * If we are losing playing this strategy, shift to another strategy
+        if (computer_strategy == "wslsk"):
             their_last = game_record[-1]["p1"]
             our_last = game_record[-1]["p2"]
             # get results
             results = who_won(their_last, our_last)
-            # did we tie? - if so, choose randomly
+            # TIE: did we tie? choose randomly
             if (not results):
                 computer_throw = element_list[choice(range(elements))]
-            # did they win? - if so, choose a throw to defeat their last one
-            elif (results == 1):
-                computer_throw = what_defeats(their_last)
-            # did we win? - if so, choose their last throw
+            # WIN: did we win? we play A
             elif (results == 2):
                 computer_throw = their_last
-    # STRATEGY 2: random
-    else:
-        computer_throw = element_list[choice(range(elements))]
+            # LOST: did we lose? we play A' (same strategy as WSLS??)
+            elif (results == 1):
+                computer_throw = what_defeats(their_last)
+        # STRATEGY: contrarian
+        #   * Assume A is opponent's throw, and A' defeats opponent's throw.
+        #   * If we win, 
+        # STRATEGY 2: random
+        if (computer_strategy == "contrarian"):
+            # TODO: Implement this, in the meantime we'll choose randomly
+            computer_throw = element_list[choice(range(elements))]
+        else:
+            computer_throw = element_list[choice(range(elements))]
     return computer_throw
+
+def what_strategy(old_a, old_b, new_a, new_b):
+    """Try to guess the apparent strategy player is using, given two previous moves and two 
+        new moves. It doesn't depend on p1 or p2 order."""
+    # this will tell who won/tie in previous throw
+    winner = who_won(old_a, old_b)
+    # if the previous game was a tie, we can't infer anything about it
+    if (winner == 0):
+        return("unknown")
+    # STRATEGY: Win Stay, Loss Shift
+    # if player won, and played A
+    elif (((winner == 1) and (new_a == old_a)) or
+            # if player lost and played B' (shifted to what would have won)
+            ((winner == 2) and defeats(new_a, old_b))):
+        return("wsls")
+    # STRATEGY: Win Stay, Loss Shift Killer
+    # if player won, and played B, or
+    elif (((winner == 1) and (new_a == old_b)) or
+            # if player lost, and played B' (equal to A'') (same as WSLS??)
+            ((winner == 2) and defeats(new_a, old_b))):
+        return("wslsk")
+    # STRATEGY: Contrarian strategy
+    # if they won, and then played A' (what would have defeated them)
+    elif (((winner == 1) and defeats(new_a, old_a)) or
+            # if player lost and played their opponent's throw
+            ((winner == 2) and (new_a == old_b))):
+        return("contrarian")
+    else:
+        return("unknown")
 
 # countdown and choices
 def countdown_choices():
@@ -529,18 +553,18 @@ def countdown_choices():
         p2_wait = 0
     return (p1_element, p1_wait, p2_element, p2_wait)
 
-def who_won(p1_element, p2_element):
+def who_won(element_a, element_b):
     # who does each player defeat? - get dictionary of defeats
-    p1_defeats_dict = ELEMENTS[p1_element]["defeats"]
-    p2_defeats_dict = ELEMENTS[p2_element]["defeats"]
+    defeats_a_dict = ELEMENTS[element_a]["defeats"]
+    defeats_b_dict = ELEMENTS[element_b]["defeats"]
     # is it a tie?
-    if (p1_element == p2_element):
+    if (element_a == element_b):
         return 0
     # did p1 win?
-    elif (p2_element in p1_defeats_dict):
+    elif (element_b in defeats_a_dict):
         return 1
     # p2 won
-    elif (p1_element in p2_defeats_dict):
+    elif (element_a in defeats_b_dict):
         return 2
     else:
         return 100
@@ -608,27 +632,6 @@ def cheaters(p1_delay, p2_delay):
         print center("""If you throw too long after "GO!" some might say you are cheating.""")
         print center("""Ahem, %s""" % late_bees)
 
-def what_strategy(old1, old2, winner, new1, new2):
-    """Try to guess the apparent strategy player is using, based on the previous moves, the current moves, 
-    and who won the last game."""
-    # if the previous game was a tie, we can't infer anything about it
-    if (winner == 0):
-        return("unknown")
-    # Strategy 1: Win Stay, Loss Shift
-    # if they won, and stayed, or
-    elif (((winner == 1) and (new1 == old1)) or
-            # if they lost, and shifted to what would have won
-            ((winner == 2) and defeats(new1, old2))):
-        return("wsls")
-    # Strategy 2: Contrarian strategy - a defence/offense against WSLS
-    # if they won, and then shifted to what would have lost to that throw
-    elif (((winner == 1) and defeats(new1, old1)) or
-            # if they lost, and then chose their opponent's old hand
-            ((winner == 2) and (new1 == old2))):
-        return("contrarian")
-    else:
-        return("unknown")
-
 def keep_record(p1_element, p2_element):
     """We record each players' throw for possible analysis and strategy"""
     global game_record
@@ -637,9 +640,9 @@ def keep_record(p1_element, p2_element):
         p2_strategy = "unknown"
     else:
         last_game = game_record[-1]
-        p1_strategy = what_strategy(last_game["p1"], last_game["p2"], last_game["winner"], 
+        p1_strategy = what_strategy(last_game["p1"], last_game["p2"],  
             p1_element, p2_element)
-        p2_strategy = what_strategy(last_game["p2"], last_game["p1"], last_game["winner"], 
+        p2_strategy = what_strategy(last_game["p2"], last_game["p1"],
             p2_element, p1_element)
     # Lists are lists of python objects, and these objects can be dictionaries
     game_record.append({
