@@ -1,0 +1,6 @@
+Throw,P1,P2,Winner,Strategy 1,Strategy 2
+0,paper,rock,1,unknown,unknown
+1,paper,scissors,2,wsls,wsls
+2,rock,paper,2,wsls,wslsk
+3,scissors,rock,2,wsls,wslsk
+4,paper,paper,0,wsls,contrarian
