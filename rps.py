@@ -55,7 +55,7 @@ players = 1
 elements = 3
 # the max number of hands we play to determine a winner
 min_wins = 1
-win_count = [0, 0]
+win_count = {'p1': 0, 'p2': 0, 'tie': 0}
 game = 0
 # how wide we want to display our text
 text_width = 80
@@ -310,10 +310,42 @@ def print_score():
     tab_text = "\t" * 2
     print nicely("Throw %i - Current score:" % game)
     print nicely("------------------------")
-    print indent("%s:  %i%s%s:  %i" % (player1, win_count[0], tab_text,
-        player2, win_count[1]))
+    print indent("%s:  %i%s%s:  %i%sTies:  %i" % (player1, win_count['p1'], tab_text,
+        player2, win_count['p2'], tab_text, win_count['tie']))
 
-def print_summary
+def print_summary():
+    print ""
+    percent1 = win_count['p1']  * 100 / (game - win_count['tie'])
+    percent2 = win_count['p2']  * 100 / (game - win_count['tie'])
+    # if there was a tie
+    if (percent1 == percent2):
+        print center("After %i throws, it was a tie!" % game)
+        print center("%s and %s each won %i throws" % (player1, player2, win_count['p1']))
+    # otherwise, someone one and should be lauded for it
+    else:
+        print center("In %i throws:" % game)
+        print center("%s won %i games (%i%%)" % (player1, win_count['p1'], percent1))
+        print center("%s won %i games (%i%%)" % (player2, win_count['p2'], percent2))
+        print center("You tied %i games" % win_count['tie'])
+        # if player1 won
+        if (percent1 > 50):
+            winner = player1
+            percent = percent1
+        # if player2 won
+        else:
+            print center("In %i throws, %s won %i games or %i" % 
+                    (game, player2, win_count['p2'], percent2))
+            winner = player2
+            percent = percent2
+        print ""
+        if (percent > 90):
+            print center("%s, you are a psychic whiz at this." % winner)
+        elif (percent > 75):
+            print center("Dang, %s, you are impressive." % winner)
+        elif (percent > 50):
+            print center("Not bad, %s." % winner)
+        else:
+            print center("Well, %s. Won that by a hair." % winner)
 
 def ready(text = "Any key to start."):
     print nicely(text),
@@ -518,7 +550,6 @@ def report_winner(p1_element, p2_element):
     # declaring these variables as global allows us to change them from within the local scope
     global win_count
     print ""
-
     # first we check if one or both of the players didn't throw
     didnt_go = []
     if (not p1_element):
@@ -541,14 +572,15 @@ def report_winner(p1_element, p2_element):
         if (results == 0):
             text1 = p1_text + " " + ELEMENTS[p1_element]["ties"] + " " + p2_text
             text2 = "It's a tie!"
+            win_count['tie'] += 1
         elif (results == 1):
             text1 = p1_text + " " + p1_defeats_dict[p2_element] + " " + p2_text
             text2 = player1 + " wins!"
-            win_count[0] += 1
+            win_count['p1'] += 1
         elif (results == 2):
             text1 = p2_text + " " + p2_defeats_dict[p1_element] + " " + p1_text
             text2 = player2 + " wins!"
-            win_count[1] += 1
+            win_count['p2'] += 1
         else:
             text1 = "Uh, something weird happened."
             text2 = "p1_element:"+p1_element+" p2_element:"+p2_element
@@ -571,7 +603,7 @@ def cheaters(p1_delay, p2_delay):
         late.append(player2)
     late_bees = " and ".join(late)
     if (early_birds):
-        print center("""Reminder: Wait until "GO!" Talking to you, %s""" % early_birds)
+        print center("""%s, wait until you see "GO" """ % early_birds)
     if (late_bees):
         print center("""If you throw too long after "GO!" some might say you are cheating.""")
         print center("""Ahem, %s""" % late_bees)
@@ -659,7 +691,7 @@ def main():
     ready("Hit any key.")
     c = ""
     # let's repeat until either the player wants to quit or someone has won enough throws
-    while ((c != 'q') and (min_wins not in win_count)):
+    while ((c != 'q') and win_count['p1'] != min_wins and win_count['p2'] != min_wins):
         print_key_guide()
         print ""
         ready("Press any key to start")
@@ -674,12 +706,11 @@ def main():
             keep_record(p1_hand, p2_hand)
         print_score()
         print ""
-        if (min_wins not in win_count):
+        if (win_count['p1'] != min_wins and win_count['p2'] != min_wins):
             c = ready("New throw? (q to quit)")
-    #print "c",c,"min_wins",min_wins,"win_count",win_count,"min_wins not in
-    #   win_count",min_wins not in win_count
     keynormalmode()
     #print_record()
+    print_summary()
     write_record_file()
     print ""
 
