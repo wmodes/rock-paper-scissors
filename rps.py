@@ -719,14 +719,14 @@ def main():
 
 # 
 if __name__=='__main__':
-    # try:     
+    try:     
         # Enter the main loop
-    main()
-    # except Exception as e: 
-    #     print ""
-    #     print str(e)
-    #     keynormalmode()
-    # except:
-    #     print ""
-    #     print "Exiting."
-    #     keynormalmode()
+        main()
+    except Exception as e: 
+        print ""
+        print str(e)
+        keynormalmode()
+    except:
+        print ""
+        print "Exiting."
+        keynormalmode()
