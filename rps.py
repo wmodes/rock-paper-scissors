@@ -253,7 +253,7 @@ def user_config_game():
         else:
             print indent("Not sure what you said there.")
 
-def print_brief():
+def print_brief_rules():
     """Print brief instructions for the game"""
     print ""
     if (players == 1):
@@ -611,7 +611,10 @@ def report_winner(p1_element, p2_element):
     print center(text1)
     print center(text2)
 
-def cheaters(p1_delay, p2_delay):
+def we_have_a_winner():
+    return (win_count['p1'] == min_wins) or (win_count['p2'] == min_wins)
+
+def warn_cheaters(p1_delay, p2_delay):
     """Look at delays and see if anyone is cheating"""
     print ""
     early = []
@@ -690,11 +693,11 @@ def main():
     keysetup()
     clear()
     user_config_game()
-    print_brief()
+    print_brief_rules()
     ready("Hit any key.")
     c = ""
     # let's repeat until either the player wants to quit or someone has won enough throws
-    while ((c != 'q') and win_count['p1'] != min_wins and win_count['p2'] != min_wins):
+    while ((c != 'q') and not we_have_a_winner()):
         print_key_guide()
         print ""
         ready("Press any key to start")
@@ -704,12 +707,12 @@ def main():
         game += 1
         (p1_hand, p1_delay, p2_hand, p2_delay) = countdown_choices()
         report_winner(p1_hand, p2_hand)
-        cheaters(p1_delay, p2_delay)
+        warn_cheaters(p1_delay, p2_delay)
         if (p1_hand and p2_hand):
             keep_record(p1_hand, p2_hand)
         print_score()
         print ""
-        if (win_count['p1'] != min_wins and win_count['p2'] != min_wins):
+        if (not we_have_a_winner()):
             c = ready("New throw? (q to quit)")
     keynormalmode()
     #print_record()
