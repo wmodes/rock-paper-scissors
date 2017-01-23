@@ -3,7 +3,7 @@ __author__      = "Wes Modes (wmodes@gmail.com)"
 __copyright__   = "2016, MIT"
 
 # Program Data
-# We define all of our data up front rather than in the program logic
+# We put as much of our data in a separate file rather than in the program logic
 
 # we create a list for indexing into our elements
 # useful since dictionaries don't have a fixed order
